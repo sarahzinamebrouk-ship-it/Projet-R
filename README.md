@@ -22,7 +22,7 @@ Utilisation de paramètres exogènes tels que la **consommation autonome (c0)**,
 
 **Analyse de stabilité** : Vérification que le dénominateur de la fonction d'équilibre est différent de zéro pour garantir la validité du modèle.
 
-# Stack TechniqueLangage: 
+# Stack Technique Langage: 
 
 **R Framework**  : Quarto Librairies utilisées :dplyr : Pour la manipulation de données (mutate, case_when)
 **tidyr** : Pour la création de grilles de paramètres (crossing).

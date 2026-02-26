@@ -1,0 +1,318 @@
+--- 
+title: "DM R" 
+format: html 
+editor: visual --- 
+## Quarto 
+Quarto enables you to weave together content and executable code into a 
+finished document. To learn more about Quarto see <https://quarto.org>. 
+## Running Code 
+When you click the **Render** button a document will be generated that 
+includes both content and the output of embedded code. You can embed code 
+like this: 
+# GRAND 1 
+```{r} 
+# on fixe les paramètres exogènes  
+c0 <- 5 
+i0 <- 5 
+G <- 20 
+gamma <- 0.1 
+``` 
+```{r} 
+#variables dépendantes amenées à varier.  
+cw <- 0.8 
+cp <- 0.6 
+ipi <- 0.15 
+omega <- 0.65 
+``` 
+```{r} 
+#1.1 création de la fonction 
+eq1 <- (c0 + i0 + G) 
+eq2 <- (1-gamma-cp-ipi+omega*(cp-cw+ipi)) 
+Yeq <- function(cw, cp, ipi, omega) { 
+eq1 <- c0 + i0 + G 
+eq2 <- (1-gamma-cp-ipi+omega*(cp-cw+ipi)) 
+Y_eq <- eq1/eq2 
+return(Y_eq) 
+} 
+``` 
+```{r} 
+#1.2 on calcule pour le jeu de référence donné au dessus.  
+#utiliser res <- Yeq(cw = X, cp = X, iπ = X, omega = X pour faire changer 
+nos valeurs dans la suite des exos) 
+res <- Yeq(cw = 0.8, cp = 0.6, ipi = 0.15, omega = 0.65) 
+print(res) 
+#1.2 Yeq renvoie 255.3191 à l'équilibre. 
+``` 
+ 
+# GRAND 2 
+ 
+```{r} 
+#2.1 
+# Les variables endogènes du modèle sont :  
+# Y le revenu total ; W la  masse salariale ; Π (Pi dans les équations) 
+le profit ; C la consommation et I l'investissement. 
+ 
+# Les variables exogènes du modèle sont : 
+# ω (qu'on apelle omega) la part salariale ; c0, i0 et G les composantes 
+autonomes (consommation, investissement et dépenses publiques)  
+# et cw, cp, iπ et gamma les paramètres comportementaux (propension 
+marginale à consommer à partir des salaires, propension marginale à 
+consommer à partir des profits, partie de l'investissement liée au niveau 
+d'activité et liée au profit.) 
+ 
+``` 
+ 
+```{r} 
+# 2.2  
+#À chaque itération, on met à jour successivement toutes les variables 
+selon les équations du modèle. 
+ 
+# Fonction de simulation par itérations (méthode des petits pas) 
+Yeq_iteratif <- function(cw, cp, ipi, omega, n_iter = 1000, 
+                         Y0 = 100, W0 = 50, Pi0 = 50, C0 = 50, I0 = 20) { 
+ 
+  # Initialisation des variables 
+  Y <- Y0 
+  W <- W0 
+  Pi <- Pi0 
+  C <- C0 
+  I <- I0 
+   # Boucle de simulation pour trouver l'équilibre 
+  for (iter in 1:n_iter) { 
+    # Mise à jour des variables selon les équations du modèle 
+    W <- omega * Y                    # Masse salariale 
+    Pi <- (1 - omega) * Y             # Profits 
+    C <- c0 + cw * W + cp * Pi        # Consommation 
+    I <- i0 + gamma * Y + ipi * Pi    # Investissement 
+    Y <- C + I + G                    # Revenu (identité comptable) 
+  } 
+ 
+  # Renvoyer les valeurs d'équilibre 
+  return(list(Y = Y, C = C, I = I, W = W, Pi = Pi)) 
+} 
+ 
+# On initialise nos variables avec des valeurs arbitraires, on recalcule 
+nos variables endogènes dans l'ordre puis après suffisament d'itérations 
+(ici, n_iter = 1000) le modèle converge vers un équilibre (il peut 
+converger avant) comme vu en cours. 
+``` 
+ 
+```{r} 
+#2.3 
+res_iter <- Yeq_iteratif(cw,cp,ipi,omega) 
+res_iter 
+``` 
+```{r} 
+#2.4 
+# Calcul de l'écart entre les deux méthodes 
+ecart <- res - res_iter $Y  #$ permet d'isoler Y dans les résultats 
+ecart 
+# interprétation : les deux méthodes donnent des résultats quasiment 
+identiques. 
+# Conclusion 
+#Les deux méthodes de résolution donnent des résultats identiques, ce qui 
+valide notre code. La méthode itérative est plus proche de la réalité 
+économique (ajustements successifs) tandis que la méthode analytique est 
+plus directe mais nécessite de résoudre l'équation algébrique au 
+préalable. 
+``` 
+# GRAND 3 
+```{r} 
+#3.1  
+#on veut calculer Y_eq en fonction de omega 
+omega_vals <- seq(0.40, 0.80, by = 0.05) 
+S <- length(omega_vals) 
+Yeq_vals <- numeric(S) 
+for (i in 1:S) { 
+Yeq_vals[i] <- Yeq(cw, cp, ipi, omega_vals[i]) 
+} 
+results_omega <- data.frame(omega = omega_vals, Yeq = Yeq_vals) 
+results_omega 
+``` 
+```{r} 
+#3.2 
+plot(results_omega$omega, results_omega$Yeq, 
+type = "b", pch = 16, 
+main = "Équilibre Y en fonction de la part salariale ω", 
+xlab = "Part salariale ω", 
+ylab = "Y d'équilibre") 
+``` 
+```{r} 
+#3.3 
+# On a : 
+# Delta = c_w - c_p - i_\pi = 0.80 - 0.60 - 0.15 = 0.05 > 0 
+# À partir de l’expression analytique de l’équilibre, on peut étudier 
+l’effet d’une variation de la part salariale \omega sur le niveau 
+d’activité Y. 
+# Le signe de cette relation dépend du terme suivant : 
+# Delta = cw - cp - ipi 
+# Avec les valeurs de référence du modèle, on obtient : 
+# Delta = 0.80 - 0.60 - 0.15 = 0.05 > 0 
+# Un Delta strictement positif signifie qu’une augmentation de la part 
+salariale accroît la demande globale. 
+# Intuitivement, cela s’explique par le fait que les salariés ont une 
+propension à consommer plus élevée que les détenteurs de profits, et que 
+l’effet négatif via l’investissement (capté par ipi) ne suffit pas à 
+compenser cet effet positif. 
+# Ainsi, une hausse de la part salariale entraîne une augmentation de la 
+consommation totale et, au final, une hausse de l’activité économique. 
+# → Le régime est donc wage-led : l’économie est tirée par les salaires 
+``` 
+# GRAND 4 
+```{r} 
+poss_equ <- function(cw, cp, iπ, omega ){ 
+omega =0.65 
+D <- 1- gamma -cp - iπ + omega * (cp - cw + iπ) 
+return(D) 
+} 
+``` 
+```{r} 
+library(tidyr)  # Installation du package afin de pouvoir effectuer la 
+fonction de crossing  
+grid <- crossing( 
+cw= c(0.70, 0.80, 0.90), 
+cp= c(0.50, 0.60, 0.70), 
+iπ = c(0.05, 0.15, 0.25) 
+) 
+print(grid) # permet l'affichage de l'objet grid  
+``` 
+```{r} 
+class(grid) # Démontre la nature globale de l'objet, soit ici grid est un 
+dataframe (plus précisément un tibble). 
+typeof(grid) #Indique que l'objet grid est une liste, sans être davantage 
+précis sur la nature de ses composantes. 
+str(grid)#Démontre la nature ainsi que la composition précise de cet 
+objet. En effet, celle-ci montre que : 
+# grid se compose de 3 colonnes (cw, cp et iπ) constituées de 27 lignes 
+(observations) 
+# grid se compose également de variables entièrement numériques. 
+``` 
+```{r} 
+#4.3 
+class(grid) # Démontre la nature globale de l'objet, soit ici grid est un 
+dataframe (plus précisément un tibble). 
+typeof(grid) #Indique que l'objet grid est une liste, sans être davantage 
+précis sur la nature de ses composantes. 
+str(grid)#Démontre la nature ainsi que la composition précise de cet 
+objet. En effet, celle-ci montre que : 
+# grid se compose de 3 colonnes (cw, cp et iπ) constituées de 27 lignes 
+(observations) 
+# grid se compose également de variables entièrement numériques. 
+``` 
+ 
+```{r} 
+#4.4) [CODE] À l’aide de mutate(), ajouter à grid une colonne calculant 
+poss_equ (donc 
+#D(ω)) pour ω fixé.  
+ 
+# Que doit vérifier cette valeur pour que l’équilibre soit bien défini ? 
+ 
+# Réponse : Pour que l’équilibre du modèle soit bien défini, il faut que 
+la valeur calculée du dénominateur de la fonction de l’équilibre ne soit 
+jamais égale à zéro.  
+# En effet, si cette valeur était nulle, cela conduirait à une situation 
+où l’équilibre serait indéfini ou infini, ce qui rendrait le modèle 
+invalide.  
+# Ainsi, la vérification consiste simplement à s’assurer que, pour chaque 
+combinaison de paramètres du modèle, le dénominateur reste différent de 
+zéro afin que le calcul de l’équilibre soit possible et cohérent. 
+ 
+ 
+#Est-bien vérifié pour tous les valeurs du modèle? 
+ 
+# Réponse: En examinant les résultats obtenus pour toutes les 
+combinaisons de paramètres testées, on constate que la valeur du 
+dénominateur est toujours différente de zéro, même lorsqu’elle est très 
+proche de zéro.  
+#Cela signifie que, pour toutes les valeurs du modèle considérées dans 
+les simulations, l’équilibre est correctement défini et le calcul peut 
+être effectué sans problème. 
+ 
+  
+library(dplyr)# install.packages("dplyr") afin de pouvoir effectuer la 
+fonction mutate() 
+ 
+omega = 0.65 # car u est considéré comme fixe.  
+ 
+grid <- grid %>% 
+  mutate(D_u = 1 - (1-omega) -cp - iπ + omega * (cp - cw +iπ)# on écrit ( 
+1-omega) car la somme du revenu et profit est égal à 1 
+                                                            # Donc par 
+équation on obtiens (1-omega) 
+                                                           # On effectue 
+cela car seule la variable omega est la seule fixée et définie.  
+         ) 
+print(grid)  
+``` 
+ 
+```{r} 
+#4.5 
+# On met en fonction l'ensemble de nos variables exogènes utilisées ainsi 
+que celle fixée (omega)  
+ 
+model_Bhad_marg2 <- function(cw, cp, iπ, omega = 0.65) { 
+   
+  # Paramètres fixés du modèle (jeu de référence) 
+  c0 <- 5 
+  i0 <- 5 
+  G  <- 20 
+  gamma <- 0.10 
+# On définit la variable A comme la somme de c0, i0 et G     
+A <- c0 + i0 + G 
+# Formation du quotient avec création du dénominateur  ainsi que du 
+numérateur comprenant A précédemment définit et (cw - cp - iπ).  
+A * (cw - cp - iπ) / 
+(1 - gamma - cp - iπ + omega * (cp - cw + iπ))^2 
+} 
+``` 
+```{r} 
+#4.6 
+#Etant donnée que le dénominateur est au carrée il est donc essentiel 
+d'affirmer que ce dernier restera toujours positif.  
+#Ainsi, étant donnée que cette variable u (oméga ) est seulement au 
+dénominateur, on peut donc confirmer le fait que oméga n'est donc pas une 
+variable déterminante.  
+#En effet, les seules variables pouvant déterminer la nature du régime ne 
+sont que l'entièreté des variables se trouvant au numérateurs soit: (cw 
+−cp −iπ).  
+# Cependant pour la l'existence d'équillibre, Y* reste définit par D_u où 
+D_u = 1 - (1-omega) -cp - iπ + omega * (cp - cw +iπ).  
+# Ainsi, c'est de part ce fait, qu'on peut affirmer que l'existence de 
+cet équillibre devient stable si et seulement si le dénomiteur est 
+supérieur à 0.  
+# Ainsi étant donnée que oméga (u au sein de notre modèle) est multiplié 
+par le facteur (cp-cw +iπ), cela induit que si la part salariale ( oméga 
+) varie négativement alors cela modifie instinctivement D_u ainsi que 
+l'équillibre qui pourra ainsi être qualifié d'instable.  
+``` 
+```{r} 
+# Mutate va permettre la création des 2 colonnes soit celle delta et dr 
+grid <- grid %>% 
+mutate(                
+colonnes delta et dr  
+# Fonction permettant de créer nos 2 nouvelles 
+delta = cw - cp - iπ,    # définition des caractéristiques de la 
+colonne de delta  
+dr   = model_Bhad_marg2 (cw, cp, iπ, omega = 0.65) # On définit  dr 
+par l'appel de la nouvelle fonction créée précédemment.  
+) 
+print(grid) ## Affichage de l'objet grid comprennant l'ensemble de nos 
+colonnes créées 
+# [CODE] Ajouter enfin une colonne regime qui indique, pour chaque 
+triplet (cw,cp,iπ),si le régime est wage-led (delta > 0), profit-led 
+(delta< 0) ou un cas limite (delta = 0). 
+grid <- grid %>% 
+mutate(                        
+# mutate permet de pouvoir créer notre 
+nouvelle colonne nommée regime qui permettra de classer l'ensemble de nos 
+delta  
+regime = case_when(          
+# case_when permet d'en déterminer les 
+conditions de classement de chaque delta 
+delta > 0  ~ "wage-led ", 
+delta < 0  ~ "profit-led", 
+delta == 0 ~ " neutre" 
+) 
+) 
+print(grid) # Affichage de l'objet grid comprennant l'ensemble de nos 
+colonnes créées 
